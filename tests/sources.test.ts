@@ -1,23 +1,25 @@
-import RedditPushshiftAPI, {RedditChannel} from '../src/sources/reddit-pushshift';
+import RedditPushshiftAPI, {RedditChannel} from '../src/sources/reddit-pushshift-api';
 
+/** */
 describe('Sources testing', () => {
     test('Reddit PushShift API', async () => {
-        const channel: RedditChannel = { subreddit: 'aww' };
-        const api = new RedditPushshiftAPI(channel);
-        await api.importData()
-            .then(function (response) {
-                expect(response.data).not.toBeUndefined();
+        const channel: RedditChannel = {
+            name: 'MirrorNet Test',
+            telegram: '-1002033699352',
+            subreddit: 'memes'
+        };
+        const redditPushshiftAPI = new RedditPushshiftAPI(channel);
+
+        await redditPushshiftAPI.importData()
+            /** we expect some posts to be successfully imported from PushShift */
+            .then(posts => {
+                expect(posts[0].id).not.toBeUndefined();
             })
-            .catch(function (error) {
-                const responseData = error.response.data;
-                if (responseData.hasOwnProperty('detail')) {
-                    expect(responseData.detail).toEqual('Not authenticated');
-                } else if (responseData.hasOwnProperty('auth')) {
-                    expect(responseData.auth).toEqual('The user is not an approved moderator on Reddit.'
-                        || 'Failed to validate the reddit user as an approved moderator.');
-                } else {
-                    expect(error.response.status).toEqual(403);
-                }
+            /** if posts are not imported, we expect that this is only due to restricted access */
+            .catch(error => {
+                expect(error.message).toEqual('Reddit PushShift API Error. Status code: 403. Not authenticated'
+                    || 'Reddit PushShift API Error. Status code: 403. The user is not an approved moderator on Reddit.'
+                    || 'Reddit PushShift API Error. Status code: 403. Failed to validate the reddit user as an approved moderator.');
             });
     });
 });
