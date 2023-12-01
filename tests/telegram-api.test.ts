@@ -1,8 +1,8 @@
-import TelegramApi from "../src/telegram-api";
+import TelegramAPI from "../src/telegram-api";
 
 describe('Telegram Bot API testing',() => {
     test('Bot token authorization',async () => {
-        const api: TelegramApi = new TelegramApi();
+        const api: TelegramAPI = new TelegramAPI();
         if (api.bot) {
             await api.bot.getMe()
                 .then(user => {
