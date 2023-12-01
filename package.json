@@ -1,10 +1,11 @@
 {
   "name": "mirrornet-telegram-bot",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "MirrorNet Poster Telegram Bot",
   "main": "index.js",
   "scripts": {
     "build": "tsc -p tsconfig.prod.json",
+    "start": "node dist/app.js",
     "test": "jest"
   },
   "author": "Oleg Dubnov",
