@@ -1,8 +1,8 @@
 /** Reddit Poster */
 
 import 'dotenv/config';
-import TelegramAPI from "../telegram-api";
-import RedditPushshiftAPI, {RedditChannel, RedditPost} from "../sources/reddit-pushshift-api";
+import TelegramAPI from '../telegram-api';
+import RedditPushshiftAPI, {RedditChannel, RedditPost} from '../sources/reddit-pushshift-api';
 
 /** Reddit Poster */
 export default class Reddit {
@@ -65,30 +65,46 @@ export default class Reddit {
     }
 
     /** */
-    private async sendPost(channel: RedditChannel, url: string, attempt: number = 1): Promise<void> {
+    private getChatId(address: string): string {
         /** */
-        return await this.bot.sendPhoto(channel.telegram, url).then(
-            response => console.log(`Channel "${channel.name}" — The post ${url} is published successfully! ${response.text}`),
+        if (address[0] != '-') {
+            return '@' + address;
+        } else {
+            return address;
+        }
+    }
+
+    /** */
+    private async sendPost(channelName: string, chatId: string, post: RedditPost, attempt: number = 1): Promise<void> {
+
+        /** */
+        return await this.bot.sendPhoto(chatId, post.url, { caption: post.title} ).then(
+            () => console.log(`Channel "${channelName}" — The post ${post.url} is published successfully!`),
             async error => {
-                console.error(`Channel "${channel.name}" — Attempt ${attempt} to publish the post ${url} is failed: ${error.response.data}`);
+                console.error(`Channel "${channelName}" — Attempt ${attempt} to publish the post ${post.url} is failed: ${error.message}`);
                 /** */
                 if (attempt < this.maxRetries) {
                     await this.sleep(this.retryInterval);
-                    return this.sendPost(channel, url, ++attempt);
+                    return this.sendPost(channelName, chatId, post, ++attempt);
                 } else {
-                    throw new Error(`Failed to publish the post ${url}. ${error.response.data}`);
+                    throw new Error(`Failed to publish the post ${post.url}. ${error.message}`);
                 }
             });
     }
 
     /** */
     private async publishPosts(channel: RedditChannel, posts: RedditPost[]): Promise<void> {
+        const telegramChatId: string = this.getChatId(channel.telegram);
         const postingInterval: number = channel.interval || this.postingInterval;
         const maxPostsPerUpdate: number = Math.floor(this.updatingInterval / postingInterval);
         let postsCounter: number = 0;
 
+        if (!posts) {
+            throw new Error('There are no posts to publish.');
+        }
+
         /** */
-        for (let post of posts) {
+        for (let post of posts.values()) {
             /** */
             if (postsCounter == maxPostsPerUpdate) {
                 return this.update(channel);
@@ -102,7 +118,7 @@ export default class Reddit {
                 continue;
             }
             /** */
-            await this.sendPost(channel, post.url).then(
+            await this.sendPost(channel.name, telegramChatId, post).then(
                 async () => {
                     postsCounter++;
                     this.publishedPosts.set(post.id, post.created_utc);
@@ -111,6 +127,9 @@ export default class Reddit {
                 error => console.error(error.message)
             );
         }
+
+        /** */
+        console.log(`${postsCounter} out of ${posts.length} posts have been published to the "${channel.name}" (${telegramChatId}) channel.`);
     }
 
     /** */
