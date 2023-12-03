@@ -1,6 +1,7 @@
 /** Reddit PushShift API */
 
 import axios from "axios";
+import axios from 'axios';
 
 /** Reddit channel structure */
 export interface RedditChannel {
@@ -44,13 +45,13 @@ export interface RedditPost {
     readonly url: string;
 
     /** content full url */
-    readonly full_link: string;
+    readonly full_link?: string;
 
     /** post score */
-    readonly score: number;
+    readonly score?: number;
 
     /** reason fof removing for removed posts */
-    readonly removed_by_category: string;
+    readonly removed_by_category?: string;
 }
 
 /** Reddit PushShift API */
