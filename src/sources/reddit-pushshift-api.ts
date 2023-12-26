@@ -4,6 +4,9 @@ import axios from 'axios';
 
 /** Reddit channel structure */
 export interface RedditChannel {
+    /** channel id */
+    readonly id: number;
+
     /** channel name */
     readonly name: string;
 
