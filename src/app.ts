@@ -2,16 +2,16 @@
 
 import Reddit from "./posters/reddit";
 
-// const x = new X();
-const reddit = new Reddit();
-
 /** The main entry point to start all the posters asynchronously */
 async function main() {
+    // const x = new X();
+    const reddit = new Reddit();
+
     // x.start().catch(
-    //     error => console.error(error.message)
+    //     error => console.error(error)
     // );
     reddit.start().catch(
-        error => console.error(error.message)
+        error => console.error(error)
     );
 }
 
