@@ -1,0 +1,14 @@
+# .dockerignore
+
+node_modules
+dist
+.idea
+.git
+.gitignore
+.DS_Store
+
+.dockerignore
+Dockerfile
+docker-compose.yml
+compose.dev.yaml
+compose.yaml

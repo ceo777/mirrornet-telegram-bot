@@ -1,0 +1,20 @@
+services:
+  bot:
+    container_name: mirrornet-prod
+    image: mirrornet-prod:latest
+    restart: always
+    build:
+      context: .
+      target: production
+    links:
+      - mongo
+  mongo:
+    container_name: mongo-prod
+    image: mongo:latest
+    restart: always
+    env_file:
+      - .prod.env
+    volumes:
+      - ~/yandex.disk.localized/server/mirrornet/db/local/mongo/prod:/data/db:rw
+    ports:
+      - 27017:27017

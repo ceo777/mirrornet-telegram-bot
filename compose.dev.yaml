@@ -1,0 +1,24 @@
+services:
+  bot:
+    container_name: mirrornet-dev
+    image: mirrornet-dev:latest
+    restart: always
+    build:
+      context: .
+      target: development
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules/
+    links:
+      - mongo
+    command: npm run start
+  mongo:
+    container_name: mongo-dev
+    image: mongo:latest
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ~/yandex.disk.localized/server/mirrornet/db/local/mongo/dev:/data/db:rw
+    ports:
+      - 27017:27017
