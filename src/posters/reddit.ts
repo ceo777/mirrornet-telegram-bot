@@ -1,16 +1,24 @@
 /** Reddit Poster */
 
-import 'dotenv/config';
+import MongoDB from '../db';
 import TelegramAPI from '../telegram-api';
-import RedditPushshiftAPI, {RedditChannel, RedditPost} from '../sources/reddit-pushshift-api';
+import RedditPushshiftAPI, { RedditChannel, RedditPost } from '../sources/reddit-pushshift-api';
+import { Collection, Db, MongoClient } from "mongodb";
+
 
 /** Reddit Poster */
 export default class Reddit {
+    /** MongoDB connection */
+    private readonly mongo: MongoClient;
+
+    /** MongoDB database */
+    private readonly db: Db;
+
+    /** MongoDB reddit collection */
+    private readonly redditCollection: Collection<RedditChannel>;
+
     /** Telegram Bot API */
     private readonly bot: TelegramAPI["bot"];
-
-    /** Reddit channel object */
-    private readonly redditChannel: RedditChannel;
 
     /** time interval between posts in ms */
     private readonly postingInterval: number;
@@ -32,10 +40,14 @@ export default class Reddit {
 
     /** Publishes data from Reddit to Telegram */
     constructor() {
+        this.mongo = new MongoDB().client;
+        this.db = this.mongo.db();
+        this.redditCollection = this.db.collection<RedditChannel>('reddit');
+
         this.bot = new TelegramAPI().bot;
 
         const second: number = 1000;
-        const minute: number = 60000;
+        const minute: number = 60 * second;
         const hour: number = 60 * minute;
 
         this.postingInterval = 5 * minute;
@@ -45,12 +57,6 @@ export default class Reddit {
         this.maxRetries = 3;
 
         this.publishedPosts = new Map;
-
-        this.redditChannel = {
-            name: String(process.env.TEST_CHANNEL_NAME),
-            telegram: String(process.env.TEST_CHANNEL_ADDRESS),
-            subreddit: String(process.env.TEST_CHANNEL_SUBREDDIT)
-        };
     }
 
     /** */
@@ -59,9 +65,60 @@ export default class Reddit {
     }
 
     /** */
+    private async getChannelFromDB(channel: RedditChannel): Promise<RedditChannel | null> {
+        try {
+            await this.mongo.connect();
+            const query = {id: channel.id};
+            const result = await this.redditCollection.findOne<RedditChannel>(
+                query,
+                {
+                    projection: {_id: 0},
+                }
+            );
+
+            if ((await this.redditCollection.countDocuments(query)) === 0) {
+                throw new Error(`There is no Reddit channel "${channel.name}" (${channel.telegram}) in the database.`);
+            }
+
+            return result;
+        } finally {
+            await this.mongo.close();
+        }
+    }
+
+    /** */
+    private async getChannelsFromDB(): Promise<RedditChannel[]> {
+        const redditChannels: RedditChannel[] = [];
+
+        try {
+            await this.mongo.connect();
+            const query = {};
+            const cursor = this.redditCollection.find<RedditChannel>(
+                query,
+                {
+                    sort: { id: 1 },
+                    projection: { _id: 0},
+                }
+            );
+
+            if ((await this.redditCollection.countDocuments(query)) === 0) {
+                throw new Error("No reddit channels found in the database!");
+            }
+
+            for await (const channel of cursor) {
+                redditChannels.push(channel);
+            }
+        } finally {
+            await this.mongo.close();
+        }
+
+        return redditChannels;
+    }
+
+    /** */
     private async getPosts(channel: RedditChannel): Promise<RedditPost[]> {
         const redditPushshiftAPI = new RedditPushshiftAPI(channel);
-        return await redditPushshiftAPI.importData();
+        return await redditPushshiftAPI.mockData();
     }
 
     /** */
@@ -76,7 +133,6 @@ export default class Reddit {
 
     /** */
     private async sendPost(channelName: string, chatId: string, post: RedditPost, attempt: number = 1): Promise<void> {
-
         /** */
         return await this.bot.sendPhoto(chatId, post.url, { caption: post.title} ).then(
             () => console.log(`Channel "${channelName}" — The post ${post.url} is published successfully!`),
@@ -107,7 +163,7 @@ export default class Reddit {
         for (let post of posts.values()) {
             /** */
             if (postsCounter == maxPostsPerUpdate) {
-                return this.update(channel);
+                return this.updateChannel(channel);
             }
             /** */
             if (post.removed_by_category) {
@@ -133,7 +189,22 @@ export default class Reddit {
     }
 
     /** */
-    private async update(channel: RedditChannel, attempt: number = 1): Promise<void> {
+    private async updateChannel(channel: RedditChannel): Promise<void> {
+        /** */
+        return await this.getChannelFromDB(channel).then(
+            channel => {
+                if (channel) {
+                    this.updatePosts(channel);
+                }
+            },
+            error => {
+                throw error;
+            }
+        );
+    }
+
+    /** */
+    private async updatePosts(channel: RedditChannel, attempt: number = 1): Promise<void> {
         /** */
         return this.getPosts(channel).then(
             posts => this.publishPosts(channel, posts),
@@ -142,7 +213,7 @@ export default class Reddit {
                 /** */
                 if (attempt < this.maxRetries) {
                     await this.sleep(this.retryInterval);
-                    return this.update(channel, ++attempt);
+                    return this.updatePosts(channel, ++attempt);
                 } else {
                     throw error;
                 }
@@ -153,9 +224,26 @@ export default class Reddit {
     public async start(): Promise<void> {
         /** */
         setInterval(this.publishedPosts.clear, this.clearingInterval);
+
+        await this.sleep(1000);
+
         /** */
-        this.update(this.redditChannel).catch(
-            error => console.error(`Channel "${this.redditChannel.name}" — ${error}`)
+        this.getChannelsFromDB().then(
+            channels => channels.forEach(
+                async channel => {
+                    /** */
+                    setTimeout(
+                        channel => {
+                            this.updateChannel(channel).catch(
+                                error => console.error(`Channel "${channel.name}" — ${error}`)
+                            );
+                        },
+                        5000,
+                        channel
+                    );
+                }
+            ),
+            error => console.error(`Reddit module Error — ${error}`)
         );
     }
 }
