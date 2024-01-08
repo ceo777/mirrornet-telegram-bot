@@ -118,7 +118,7 @@ export default class Reddit {
     /** */
     private async getPosts(channel: RedditChannel): Promise<RedditPost[]> {
         const redditPushshiftAPI = new RedditPushshiftAPI(channel);
-        return await redditPushshiftAPI.mockData();
+        return await redditPushshiftAPI.importData();
     }
 
     /** */
