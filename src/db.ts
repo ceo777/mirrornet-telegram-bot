@@ -4,10 +4,10 @@ import 'dotenv/config';
 import { MongoClient } from 'mongodb';
 
 /** */
-export default class MongoDB {
     /**
      * Connection URI. See https://docs.mongodb.com/ecosystem/drivers/node/ for more details
      */
+export class MongoDB {
     private readonly DB_URI: string;
 
     /**

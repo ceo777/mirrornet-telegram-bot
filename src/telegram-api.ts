@@ -3,7 +3,7 @@
 import 'dotenv/config';
 import TelegramBot from 'node-telegram-bot-api';
 
-export default class TelegramAPI {
+export class TelegramAPI {
     private readonly TELEGRAM_BOT_TOKEN:  string = String(process.env.TELEGRAM_BOT_TOKEN);
     public bot: TelegramBot;
     constructor() {

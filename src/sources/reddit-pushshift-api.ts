@@ -57,7 +57,7 @@ export interface RedditPost {
 }
 
 /** Reddit PushShift API */
-export default class RedditPushshiftAPI {
+export class RedditPushshiftAPI {
     private readonly pushshiftUrl: string = 'https://api.pushshift.io/reddit/submission/search';
     private readonly requestParams: {
         subreddit: string;

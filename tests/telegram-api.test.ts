@@ -1,4 +1,4 @@
-import TelegramAPI from "../src/telegram-api";
+import { TelegramAPI } from "../src/telegram-api";
 
 describe('Telegram Bot API testing',() => {
     test('Bot token authorization',async () => {

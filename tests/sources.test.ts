@@ -1,4 +1,4 @@
-import RedditPushshiftAPI, {RedditChannel} from '../src/sources/reddit-pushshift-api';
+import { RedditChannel, RedditPushshiftAPI } from '../src/sources/reddit-pushshift-api';
 
 /** */
 describe('Sources testing', () => {

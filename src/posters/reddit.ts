@@ -1,8 +1,8 @@
 /** Reddit Poster */
 
-import MongoDB from '../db';
-import TelegramAPI from '../telegram-api';
-import RedditPushshiftAPI, { RedditChannel, RedditPost } from '../sources/reddit-pushshift-api';
+import { MongoDB } from '../db';
+import { TelegramAPI } from '../telegram-api';
+import { RedditChannel, RedditPost, RedditPushshiftAPI } from '../sources/reddit-pushshift-api';
 import { Collection, Db, MongoClient } from "mongodb";
 
 
