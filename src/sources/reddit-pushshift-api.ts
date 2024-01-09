@@ -79,7 +79,7 @@ export class RedditPushshiftAPI {
             score: '>' + ( channel.score || 0),
             size: channel.size || 50,
             sort: 'asc',
-            fields: 'id,created_utc,title,url,full_link,score,removed_by_category'
+            fields: 'id,created_utc,title,url,full_link,score,removed_by_category',
         };
     }
 
@@ -90,13 +90,10 @@ export class RedditPushshiftAPI {
             error => {
                 let cause: string;
                 const errorData = error.response.data;
-                if (errorData.hasOwnProperty('detail')) {
-                    cause = errorData.detail;
-                } else if (errorData.hasOwnProperty('auth')) {
-                    cause = errorData.auth;
-                } else {
-                    cause = errorData;
-                }
+
+                /* PushShift API may respond with errors with various structures */
+                cause = errorData.detail || errorData.auth || errorData;
+
                 throw new Error(`Reddit PushShift API Error. Status code: ${error.response.status}. ${cause}`);
             })
     }
