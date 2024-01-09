@@ -1,6 +1,9 @@
 /** Reddit PushShift API */
 
 import axios from 'axios';
+import * as path from 'path';
+import { readFile } from 'node:fs/promises';
+
 
 /** Reddit channel structure */
 export interface RedditChannel {
@@ -96,5 +99,18 @@ export class RedditPushshiftAPI {
 
                 throw new Error(`Reddit PushShift API Error. Status code: ${error.response.status}. ${cause}`);
             })
+    }
+
+    /**
+     * Imports mock posts from local disk. For development purposes only
+     * @returns array of Reddit posts
+     *
+     * @internal
+     */
+    public async mockData(): Promise<RedditPost[]> {
+        return await readFile(path.resolve(__dirname, '../../mockdata.json'), 'utf8').then(
+            data => JSON.parse(data),
+            error => new Error(`Mock data file reading Error. ${error}`)
+        );
     }
 }
