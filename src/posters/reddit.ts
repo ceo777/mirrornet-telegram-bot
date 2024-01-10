@@ -123,18 +123,14 @@ export default class Reddit {
 
     /** */
     private getChatId(address: string): string {
-        /** */
-        if (address[0] != '-') {
-            return '@' + address;
-        } else {
-            return address;
-        }
+        /* Private chat ids start with '-' and are already stored in the database with it. Public ones start with '@' */
+        return (address[0] != '-') ? '@' + address : address;
     }
 
     /** */
     private async sendPost(channelName: string, chatId: string, post: RedditPost, attempt: number = 1): Promise<void> {
-        /** */
-        return await this.bot.sendPhoto(chatId, post.url, { caption: post.title} ).then(
+        /* The Telegram Bot API method that sends an image with a title to the current Telegram chat */
+        await this.bot.sendPhoto(chatId, post.url, { caption: post.title} ).then(
             () => console.log(`Channel "${channelName}" — The post ${post.url} is published successfully!`),
             async error => {
                 console.error(`Channel "${channelName}" — Attempt ${attempt} to publish the post ${post.url} is failed: ${error.message}`);
