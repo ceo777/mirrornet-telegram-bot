@@ -78,7 +78,7 @@ export class RedditPushshiftAPI {
         this.requestParams = {
             subreddit: channel.subreddit,
             after: ( channel.after || 24 ) + 'h',
-            before: ( channel.before || 12 ) + 'h',
+            before: ( channel.before ?? 12 ) + 'h', /* 'before' can be zero */
             score: '>' + ( channel.score || 0),
             size: channel.size || 50,
             sort: 'asc',
