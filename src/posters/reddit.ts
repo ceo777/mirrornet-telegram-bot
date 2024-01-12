@@ -66,50 +66,43 @@ export default class Reddit {
 
     /** */
     private async getChannelFromDB(channel: RedditChannel): Promise<RedditChannel | null> {
-        try {
-            await this.mongo.connect();
-            const query = {id: channel.id};
-            const result = await this.redditCollection.findOne<RedditChannel>(
-                query,
-                {
-                    projection: {_id: 0},
-                }
-            );
-
-            if ((await this.redditCollection.countDocuments(query)) === 0) {
-                throw new Error(`There is no Reddit channel "${channel.name}" (${channel.telegram}) in the database.`);
+        const query = {id: channel.id};
+        const result = await this.redditCollection.findOne<RedditChannel>(
+            query,
+            {
+                projection: {_id: 0},
             }
+        );
 
-            return result;
-        } finally {
-            await this.mongo.close();
+        /* Throw an error if there is no such Reddit channel in the database */
+        if ((await this.redditCollection.countDocuments(query)) === 0) {
+            throw new Error(`No Reddit channel "${channel.name}" (${channel.telegram}) found in the database!`);
         }
+
+        return result;
     }
 
     /** */
     private async getChannelsFromDB(): Promise<RedditChannel[]> {
         const redditChannels: RedditChannel[] = [];
 
-        try {
-            await this.mongo.connect();
-            const query = {};
-            const cursor = this.redditCollection.find<RedditChannel>(
-                query,
-                {
-                    sort: { id: 1 },
-                    projection: { _id: 0},
-                }
-            );
-
-            if ((await this.redditCollection.countDocuments(query)) === 0) {
-                throw new Error("No reddit channels found in the database!");
+        const query = {};
+        const cursor = this.redditCollection.find<RedditChannel>(
+            query,
+            {
+                sort: { id: 1 },
+                projection: { _id: 0},
             }
+        );
 
-            for await (const channel of cursor) {
-                redditChannels.push(channel);
-            }
-        } finally {
-            await this.mongo.close();
+        /* Throw an error if there are no Reddit channels in the database */
+        if ((await this.redditCollection.countDocuments(query)) === 0) {
+            throw new Error('No Reddit channels found in the database!');
+        }
+
+        /* Iterating a Mongo client cursor to form an array of channels  */
+        for await (const channel of cursor) {
+            redditChannels.push(channel);
         }
 
         return redditChannels;
