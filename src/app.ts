@@ -3,7 +3,7 @@
 import Reddit from "./posters/reddit";
 
 /** The main entry point to start all the posters asynchronously */
-async function main() {
+async function main(): Promise<void> {
     // const x = new X();
     const reddit = new Reddit();
 
