@@ -10,8 +10,9 @@ async function main(): Promise<void> {
     // x.start().catch(
     //     error => console.error(error)
     // );
+    console.log(`Starting Reddit poster!`);
     reddit.start().catch(
-        error => console.error(error)
+        error => console.error(error.message)
     );
 }
 
