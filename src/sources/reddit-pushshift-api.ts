@@ -11,6 +11,9 @@ export interface RedditChannel {
     readonly id: number;
 
     /** channel name */
+    /** Posting to the channel is enabled or not */
+    readonly enabled: boolean;
+
     readonly name: string;
 
     /** telegram address */

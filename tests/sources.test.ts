@@ -5,6 +5,7 @@ describe('Sources testing', () => {
     test('Reddit PushShift API', async () => {
         const channel: RedditChannel = {
             id: 1,
+            enabled: true,
             name: 'MirrorNet Test',
             telegram: '-1002033699352',
             subreddit: 'memes'

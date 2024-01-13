@@ -1,6 +1,6 @@
 {
   "name": "mirrornet-telegram-bot",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "description": "MirrorNet Poster Telegram Bot",
   "main": "index.js",
   "scripts": {
