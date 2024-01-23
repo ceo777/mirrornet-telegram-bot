@@ -7,8 +7,8 @@
 
 import { MongoClient, Db, Collection } from "mongodb";
 import { MongoDB } from '../db';
-import { TelegramAPI } from '../telegram-api';
-import { RedditChannel, RedditPost, RedditPushshiftAPI } from '../sources/reddit-pushshift-api';
+import { TelegramApi } from '../telegram-api';
+import { RedditChannel, RedditPost, RedditPushshiftApi } from '../sources/reddit-pushshift-api';
 
 
 /** Reddit Poster. Publishes data from Reddit to Telegram */
@@ -23,7 +23,7 @@ export default class Reddit {
     private readonly redditCollection: Collection<RedditChannel>;
 
     /** Telegram Bot API */
-    private readonly bot: TelegramAPI["bot"];
+    private readonly bot: TelegramApi["bot"];
 
     /** Time interval between starting channels in milliseconds */
     private readonly startingInterval: number;
@@ -53,7 +53,7 @@ export default class Reddit {
         this.redditCollection = this.db.collection<RedditChannel>('reddit');
 
         /* Establishing a connection to the Telegram API */
-        this.bot = new TelegramAPI().bot;
+        this.bot = new TelegramApi().bot;
 
         /* Auxiliary constants for convenience */
         const second: number = 1000;
@@ -137,13 +137,13 @@ export default class Reddit {
      * @returns array of Reddit posts for the current channel
      */
     private async getPosts(channel: RedditChannel): Promise<RedditPost[]> {
-        const redditPushshiftAPI = new RedditPushshiftAPI(channel);
+        const redditPushshiftApi = new RedditPushshiftApi(channel);
 
         /* Importing mock posts from local disk for testing purposes. Uncomment for testing only */
-        // return await redditPushshiftAPI.mockData();
+        // return await redditPushshiftApi.mockData();
 
         /* Importing real posts from the Reddit PushShift Source */
-        return await redditPushshiftAPI.importData();
+        return await redditPushshiftApi.importData();
     }
 
     /**

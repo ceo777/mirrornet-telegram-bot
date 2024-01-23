@@ -62,8 +62,9 @@ export interface RedditPost {
     readonly removed_by_category?: string;
 }
 
-/** Reddit PushShift API */
-export class RedditPushshiftAPI {
+/** Access to the Reddit subreddits data using the PushShift API */
+export class RedditPushshiftApi {
+    /** PushShift API search endpoint URL */
     private readonly pushshiftUrl: string = 'https://api.pushshift.io/reddit/submission/search';
     private readonly requestParams: {
         subreddit: string;
