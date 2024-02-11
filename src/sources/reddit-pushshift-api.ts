@@ -1,4 +1,9 @@
-/** Reddit PushShift API */
+/**
+ * Reddit PushShift API module
+ *
+ * Copyright © 2024 Oleg Dubnov
+ * https://olegdubnov.com
+ */
 
 import axios from 'axios';
 import * as path from 'path';
@@ -7,58 +12,58 @@ import { readFile } from 'node:fs/promises';
 
 /** Reddit channel structure */
 export interface RedditChannel {
-    /** channel id */
+    /** Channel id */
     readonly id: number;
 
-    /** channel name */
     /** Posting to the channel is enabled or not */
     readonly enabled: boolean;
 
+    /** Channel name */
     readonly name: string;
 
-    /** telegram address */
+    /** Telegram address */
     readonly telegram: string;
 
-    /** posting interval in ms */
+    /** Posting interval in milliseconds */
     readonly interval?: number;
 
-    /** subreddit address */
+    /** Subreddit address */
     readonly subreddit: string;
 
-    /** after hours in range 1-24, posts need some time to gain score */
+    /** After hours in range 1-24, posts need some time to gain score on Reddit */
     readonly after?: number;
 
-    /** before hours in range 1-24, posts need some time to get tag 'removed' */
+    /** Before hours in range 1-24, posts need some time to get tag 'removed' on Reddit */
     readonly before?: number;
 
-    /** score of post on Reddit */
+    /** Score of posts on Reddit */
     readonly score?: number;
 
-    /** number of posts to be received */
+    /** Number of posts to be received */
     readonly size?: number;
 }
 
-/** Structure of a post retrieved using the PushShift API */
+/** Structure of a post received from the PushShift API */
 export interface RedditPost {
-    /** post id */
+    /** Post id */
     readonly id: number;
 
-    /** post creation date */
+    /** Post creation date */
     readonly created_utc: string;
 
-    /** post title */
+    /** Post title */
     readonly title: string;
 
-    /** content short url */
+    /** Content short url */
     readonly url: string;
 
-    /** content full url */
+    /** Content full url */
     readonly full_link?: string;
 
-    /** post score */
+    /** Post score */
     readonly score?: number;
 
-    /** reason fof removing for removed posts */
+    /** Reason of removing for removed posts */
     readonly removed_by_category?: string;
 }
 
@@ -66,19 +71,33 @@ export interface RedditPost {
 export class RedditPushshiftApi {
     /** PushShift API search endpoint URL */
     private readonly pushshiftUrl: string = 'https://api.pushshift.io/reddit/submission/search';
+
+    /** PushShift API search endpoint request parameters */
     private readonly requestParams: {
+        /** Subreddit address */
         subreddit: string;
+
+        /** After hours in range 1-24, posts need some time to gain score on Reddit */
         after: string;
+
+        /** Before hours in range 1-24, posts need some time to get tag 'removed' on Reddit */
         before: string;
+
+        /** Score of posts on Reddit */
         score: string;
+
+        /** Number of posts to be received */
         size: number;
+
+        /** Type of sorting of received posts */
         sort: 'asc' | 'desc';
+
+        /** Fields to be retrieved (Corresponds to the RedditPost interface) */
         fields: string;
     }
 
-    /** Access to the Reddit subreddits data using the PushShift API */
     constructor(channel: RedditChannel) {
-        /** Reformatting Reddit channel data for using in URL request */
+        /* Converting Reddit channel data into request parameters for use in a URL request */
         this.requestParams = {
             subreddit: channel.subreddit,
             after: ( channel.after || 24 ) + 'h',
@@ -90,7 +109,10 @@ export class RedditPushshiftApi {
         };
     }
 
-    /** Imports posts using a URL request to the PushShift API */
+    /**
+     * Imports posts from the PushShift API with a GET url request using Axios
+     * @returns array of Reddit posts
+     */
     public async importData(): Promise<RedditPost[]> {
         return await axios.get(this.pushshiftUrl, {params: this.requestParams}).then(
             response => response.data.post,

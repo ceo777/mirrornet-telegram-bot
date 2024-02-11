@@ -1,8 +1,8 @@
 {
   "name": "mirrornet-telegram-bot",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "MirrorNet Poster Telegram Bot",
-  "author": "Oleg Dubnov",
+  "author": "Oleg Dubnov (https://olegdubnov.com)",
   "license": "ISC",
   "main": "index.js",
   "scripts": {

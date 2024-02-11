@@ -1,7 +1,7 @@
 /**
- * Reddit Poster
+ * Reddit Poster module
  *
- * Copyright © 2024 Oleg Dubnov. All Rights Reserved.
+ * Copyright © 2024 Oleg Dubnov
  * https://olegdubnov.com
  */
 
@@ -90,7 +90,7 @@ export default class Reddit {
         const result = await this.redditCollection.findOne<RedditChannel>(
             query,
             {
-                projection: {_id: 0},
+                projection: {_id: 0}, /* Do not return the database internal ID in the query */
             }
         );
 
@@ -113,8 +113,8 @@ export default class Reddit {
         const cursor = this.redditCollection.find<RedditChannel>(
             query,
             {
-                sort: { id: 1 },
-                projection: { _id: 0},
+                sort: { id: 1 }, /* Sort results by the channel ID */
+                projection: { _id: 0}, /* Do not return the database internal ID in the query */
             }
         );
 
@@ -132,7 +132,7 @@ export default class Reddit {
     }
 
     /**
-     * Imports posts to be published in the current channel
+     * Imports posts to be published to the current channel
      * @param channel - Reddit channel
      * @returns array of Reddit posts for the current channel
      */
@@ -142,7 +142,7 @@ export default class Reddit {
         /* Importing mock posts from local disk for testing purposes. Uncomment for testing only */
         // return await redditPushshiftApi.mockData();
 
-        /* Importing real posts from the Reddit PushShift Source */
+        /* Importing posts from the Reddit PushShift Source */
         return await redditPushshiftApi.importData();
     }
 
@@ -171,7 +171,7 @@ export default class Reddit {
                 console.error(`Channel "${channelName}" — Attempt ${attempt}` +
                     ` to publish the post ${post.url} is failed: ${error.message}`);
 
-                /* If failed retry specified number of times (Recursive call) */
+                /* If failed, retry the specified number of times (recursive call) */
                 if (attempt < this.maxRetries) {
                     await this.sleep(this.retryInterval);
                     return this.sendPost(channelName, chatId, post, ++attempt);
@@ -181,27 +181,32 @@ export default class Reddit {
             });
     }
 
-    /** */
+    /**
+     * Publishes imported posts to the current Telegram channel according to the posting interval
+     * @param channel - Reddit channel
+     * @param posts - array of posts to be published
+     */
     private async publishPosts(channel: RedditChannel, posts: RedditPost[]): Promise<void> {
-        /* */
+        /* Preparing the Telegram channel chat id */
         const telegramChatId: string = this.getChatId(channel.telegram);
-        /* */
+
+        /* If the posting interval is not set for the current channel, the default value is used */
         const postingInterval: number = channel.interval || this.postingInterval;
-        /* */
+
+        /* Calculating the maximum number of posts that can be published within the specified updating interval */
         const maxPostsPerUpdate: number = Math.floor(this.updatingInterval / postingInterval);
 
         const newPosts: RedditPost[] = [];
-
         let postsCounter: number = 0;
 
-        /* */
+        /* Filtering the posts */
         for (let post of posts.values()) {
-            /* */
+            /* Skip removed posts */
             if (post.removed_by_category) {
                 continue;
             }
 
-            /* */
+            /* Skip already published posts */
             if (this.publishedPosts[channel.id].has(post.id)) {
                 continue;
             }
@@ -213,22 +218,22 @@ export default class Reddit {
             throw new Error('There are no new posts to be published!');
         }
 
-        /* */
+        /* Publishing the remaining posts evenly within the specified updating interval */
         for (let post of newPosts.values()) {
-            /* */
+            /* Stop if posts limit is reached */
             if (postsCounter == maxPostsPerUpdate) {
                 break;
             }
 
-            /* */
+            /* Sending the post */
             await this.sendPost(channel.name, telegramChatId, post).then(
                 async () => {
                     postsCounter++;
 
-                    /* */
+                    /* Adding to history of published posts */
                     this.publishedPosts[channel.id].set(post.id, post.created_utc);
 
-                    /* */
+                    /* Waiting for the specified posting interval between sending the next post */
                     await this.sleep(postingInterval);
                 },
                 error => console.error(`Channel "${channel.name}" — ${error.message}`)
@@ -245,8 +250,13 @@ export default class Reddit {
         return this.updateChannel(channel);
     }
 
-    /** */
+    /**
+     * Updates an array of posts for the current channel and starts publishing
+     * @param channel - Reddit channel
+     * @param attempt - a number of attempt to update the posts
+     */
     private async updatePosts(channel: RedditChannel, attempt: number = 1): Promise<void> {
+        /* Importing posts and, if successful, starting publishing */
         return this.getPosts(channel).then(
             posts => this.publishPosts(channel, posts).catch(
                 error => {
@@ -257,7 +267,7 @@ export default class Reddit {
                 console.error(`Channel "${channel.name}" — Attempt ${attempt}` +
                     ` to get posts from Reddit is failed: ${error.message}`);
 
-                /* */
+                /* If failed, retry the specified number of times (recursive call) */
                 if (attempt < this.maxRetries) {
                     await this.sleep(this.retryInterval);
                     return this.updatePosts(channel, ++attempt);
@@ -267,7 +277,10 @@ export default class Reddit {
             });
     }
 
-    /** */
+    /**
+     * Updates the current channel settings from the database and starts updating posts
+     * @param channel - Reddit channel
+     */
     private async updateChannel(channel: RedditChannel): Promise<void> {
         console.log(`Updating Reddit channel "${channel.name}"...`);
 
@@ -279,7 +292,7 @@ export default class Reddit {
                         error => {
                             console.error(`Channel "${channel.name}" — ${error.message}`);
 
-                            /* */
+                            /* If posts updating is failed, update the channel after the specified period of time */
                             setTimeout(
                                 channel => this.updateChannel(channel),
                                 this.postingInterval,
@@ -299,34 +312,32 @@ export default class Reddit {
         );
     }
 
-    /** */
+    /** Starts the Reddit poster */
     public async start(): Promise<void> {
-        /* */
         let startTime: number = 1000;
 
-        /* */
+        /* Getting all available channels */
         this.getChannelsFromDB().then(
             channels => channels.forEach(
                 channel => {
-                    /* */
+                    /* Starting only active channels */
                     if (channel.enabled) {
                         console.log(`Reddit channel "${channel.name}" is ON`);
                         console.log(`Starting Reddit channel "${channel.name}"...`);
 
-                        /* */
+                        /* Creating a new history of published posts for each active channel */
                         this.publishedPosts[channel.id] = new Map<number, string>;
 
                         /* Clearing channel's history of published posts after every specified period of time */
                         setInterval(this.publishedPosts[channel.id].clear, this.clearingInterval);
 
-                        /* */
+                        /* Starting all the channels with the specified interval between them */
                         setTimeout(
                             channel => this.updateChannel(channel),
                             startTime,
                             channel
                         );
 
-                        /* */
                         startTime += this.startingInterval;
                     } else {
                         console.log(`Reddit channel "${channel.name}" is OFF`);
